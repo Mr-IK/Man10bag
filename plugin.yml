@@ -1,0 +1,8 @@
+name: MKbag
+version: 1.0.0
+main: red.man10.Man10bag
+commands:
+  mbag:
+    description: Man10bag
+    usage: /<command>
+    default: op
