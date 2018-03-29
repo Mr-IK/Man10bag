@@ -1,5 +1,5 @@
-name: MKbag
-version: 1.0.0
+name: Man10bag
+version: 1.1.0
 main: red.man10.Man10bag
 commands:
   mbag:

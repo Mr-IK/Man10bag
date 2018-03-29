@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
@@ -43,9 +44,29 @@ public class Man10bag extends JavaPlugin {
 			}
 		}
 		Player p = (Player)sender;
-		if(args.length == 2) {
+		if(args.length == 3) {
+			if(args[0].equalsIgnoreCase("reissue")) {
+				String bagname = "§8"+args[1];
+		          if(bags.containsKey(bagname)==false) {
+		        	  p.sendMessage(prefix+"§4そのバッグ名は存在しません！");
+		        	  return true;
+		          }
+		          if(config1.getString("invs."+bagname+".code").equalsIgnoreCase(args[2])==false) {
+		        	  p.sendMessage(prefix+"§4再発行コードが間違っています！");
+		        	  return true;
+		          }
+		            if(Vault.economy.getBalance(p)<100000) {
+		            	p.sendMessage(prefix+"§4お金が足りません!");
+		            	return true;
+		            }
+		            Vault.economy.withdrawPlayer(p, 100000);
+		          ItemStack hand = config1.getItemStack("invs."+bagname+".key");
+		          p.getInventory().addItem(hand);
+		          p.sendMessage(prefix+"§a再発行しました。もう無くさないでね！");
+				return true;
+			}
           String bagname = "§8"+args[0];
-          if(bags.containsKey(bagname)) {
+          if(bags.containsKey(bagname)||bagname.equalsIgnoreCase("reissue")) {
         	  p.sendMessage(prefix+"§4すでにそのバッグは作成されています！");
         	  return true;
           }
@@ -77,17 +98,68 @@ public class Man10bag extends JavaPlugin {
             p.getInventory().addItem(hand);
             config1.set("invs."+bagname+".key",hand);
             config1.set("invs."+bagname+".size",size);
+            config1.set("invs."+bagname+".code",args[2]);
             bag.put(hand, bagname);
-            Inventory inv = Bukkit.createInventory((InventoryHolder)null, size, args[0]);
+            Inventory inv = Bukkit.createInventory((InventoryHolder)null, size, bagname);
             bags.put(bagname, inv);
             p.sendMessage(prefix+"§e$"+size*100000+"§a支払い、"+bagname+"§aバッグを作成しました！");
             saveConfig();
             return true;
+		}else if(args.length == 4) {
+	          String bagname = "§8"+args[0];
+	          if(bags.containsKey(bagname)) {
+	        	  p.sendMessage(prefix+"§4すでにそのバッグは作成されています！");
+	        	  return true;
+	          }
+				int size = 0;
+	            try {
+	            size = Integer.parseInt(args[1]);
+				  }catch (NumberFormatException f){
+				   p.sendMessage(prefix+"§4数字で入力してください。");
+				   return true;
+				}
+	            if(size!=9&&size!=18&&size!=27&&size!=36&&size!=45&&size!=54) {
+	            	p.sendMessage(prefix+"§49の倍数でかつ、54以下にしてください。");
+	            	return true;
+	            }
+	            if(Vault.economy.getBalance(p)<size*100000) {
+	            	p.sendMessage(prefix+"§4お金が足りません!");
+	            	return true;
+	            }
+	            Vault.economy.withdrawPlayer(p, size*100000);
+	            ItemStack hand = new ItemStack(Material.CHEST);
+	            ItemMeta handmeta = hand.getItemMeta();
+	            handmeta.setDisplayName(bagname);
+	            List<String> k = new ArrayList<String>();
+	            k.add("§6サイズ: "+size);
+	            k.add("§e作成者: "+p.getName());
+	            k.add("§aメモ: §e"+args[2]);
+	            k.add("§b右クリックでGUIが開きます。");
+	            handmeta.setLore(k);
+	            hand.setItemMeta(handmeta);
+	            p.getInventory().addItem(hand);
+	            config1.set("invs."+bagname+".key",hand);
+	            config1.set("invs."+bagname+".size",size);
+	            config1.set("invs."+bagname+".code",args[3]);
+	            bag.put(hand, bagname);
+	            Inventory inv = Bukkit.createInventory((InventoryHolder)null, size, bagname);
+	            bags.put(bagname, inv);
+	            p.sendMessage(prefix+"§e$"+size*100000+"§a支払い、"+bagname+"§aバッグを作成しました！");
+	            saveConfig();
+	            return true;
 		}else if(args.length == 0) {
 			p.sendMessage("=======§a§kaaa§6§l===="+prefix+"====§a§kaaa§r=======");
-			p.sendMessage(prefix+"§a/mbag [バッグ名] [大きさ] => バッグを作成します");
-			p.sendMessage("=======§a§kaaa§6§l====v1.0====§a§kaaa§r=======");
+			p.sendMessage(prefix+"§a/mbag [バッグ名] [大きさ] [再発行コード]=> バッグを作成します");
+			p.sendMessage(prefix+"§a/mbag [バッグ名] [大きさ] [メモ] [再発行コード]=> メモ付きバッグを作成します");
+			p.sendMessage(prefix+"§a/mbag reissue [バッグ名] [再発行コード]=> バッグを再発行します。$10万必要");
+			p.sendMessage("=======§a§kaaa§6§l====v1.1.0====§a§kaaa§r=======");
+			return true;
 		}
+		p.sendMessage("=======§a§kaaa§6§l===="+prefix+"====§a§kaaa§r=======");
+		p.sendMessage(prefix+"§a/mbag [バッグ名] [大きさ] [再発行コード]=> バッグを作成します");
+		p.sendMessage(prefix+"§a/mbag [バッグ名] [大きさ] [メモ] [再発行コード]=> メモ付きバッグを作成します");
+		p.sendMessage(prefix+"§a/mbag reissue [バッグ名] [再発行コード]=> バッグを再発行します。$10万必要");
+		p.sendMessage("=======§a§kaaa§6§l====v1.1.0====§a§kaaa§r=======");
 		return true;
 	}
 
@@ -156,15 +228,53 @@ public class Man10bag extends JavaPlugin {
     }
     @EventHandler
     public void onCloseInventory(InventoryCloseEvent e){
-    if(playerState.containsKey(e.getPlayer().getUniqueId())) {
-    	 Inventory inv = e.getInventory();
+    	Player p = (Player) e.getPlayer();
+        if(playerState.containsKey(p.getUniqueId())) {
+    	 Inventory inv = p.getInventory();
      	 String name = inv.getName();
     	 if(bags.containsKey(name)) {
     		bags.put(name, inv);
     	 }
+         p.getWorld().playSound(p.getLocation(),"block.chest.close",1.0F, 1.0F);
+         p.getWorld().playSound(p.getLocation(),"block.enderchest.close",1.0F, 1.0F);
+         p.getWorld().playSound(p.getLocation(),"block.enchantment_table.use",1.0F, 1.0F);
     	}
         playerState.remove(e.getPlayer().getUniqueId());
     	return;
+    }
+    @EventHandler
+    public void onclick(InventoryClickEvent e){
+       
+        Player p= (Player) e.getWhoClicked();
+        if(playerState.containsKey(p.getUniqueId())) {
+        	if(!e.getCurrentItem().getType().equals(Material.CHEST)) {
+        		return;
+        	}
+        	if(e.getCurrentItem().getItemMeta().equals(null)) {
+        	   return;
+        	}
+        	if(e.getCurrentItem().getItemMeta().hasDisplayName()==false) {
+        	   return;
+        	}
+        	if(e.getCurrentItem().getItemMeta().getDisplayName().equals(e.getView().getTopInventory().getName())) {
+               e.setCancelled(true);
+               return;
+        	}
+        	if(!e.getCursor().getType().equals(Material.CHEST)) {
+        		return;
+        	}
+        	if(e.getCursor().getItemMeta().equals(null)) {
+        	   return;
+        	}
+        	if(e.getCursor().getItemMeta().hasDisplayName()==false) {
+        	   return;
+        	}
+        	if(e.getCursor().getItemMeta().getDisplayName().equals(e.getView().getTopInventory().getName())) {
+               e.setCancelled(true);
+               return;
+        	}
+        }
+        return;
     }
 	@EventHandler
     public void onInteract(PlayerInteractEvent e) {
@@ -177,8 +287,11 @@ public class Man10bag extends JavaPlugin {
 							e.setCancelled(true);
 							String key = bag.get(item);
 							Inventory inv = bags.get(key);
-							p.openInventory(inv);
+					        p.getWorld().playSound(p.getLocation(),"block.chest.open",1.0F, 1.0F);
+					        p.getWorld().playSound(p.getLocation(),"block.end_portal_frame.fill",1.0F, 1.0F);
+					        p.getWorld().playSound(p.getLocation(),"block.enderchest.open",1.0F, 1.0F);
                             playerState.put(p.getUniqueId(),inv);
+							p.openInventory(inv);
 							return;
 						}
 					}
