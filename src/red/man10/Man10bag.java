@@ -20,7 +20,6 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -167,8 +166,7 @@ public class Man10bag extends JavaPlugin {
 	public void onDisable() {
         for(Player p:Bukkit.getOnlinePlayers()){
             if(playerState.containsKey(p.getUniqueId())) {
-            	InventoryView view = p.getOpenInventory();
-            	Inventory inv= view.getTopInventory();
+            	Inventory inv = p.getOpenInventory().getTopInventory();
             	if(bags.containsKey(inv.getName())) {
             	bags.put(inv.getName(), inv);
             	playerState.remove(p.getUniqueId());
@@ -176,9 +174,11 @@ public class Man10bag extends JavaPlugin {
             	}
             }
         }
+        config1.set("invs", null);
 		for (String name : bags.keySet()){
 			Inventory inv = bags.get(name);
 			int size = inv.getSize();
+			config1.set("invs."+name+".size",size);
 			for(int i = 0;i<size;i++) {
 				if(inv.getItem(i)!=null) {
 					ItemStack item = inv.getItem(i);
@@ -186,6 +186,10 @@ public class Man10bag extends JavaPlugin {
 				}
 			}
 	    }
+		for (ItemStack key : bag.keySet()){
+			String name = bag.get(key);
+			config1.set("invs."+name+".key",key);
+		}
 		saveConfig();
 		super.onDisable();
 	}
@@ -244,7 +248,7 @@ public class Man10bag extends JavaPlugin {
     }
     @EventHandler
     public void onclick(InventoryClickEvent e){
-       
+
         Player p= (Player) e.getWhoClicked();
         if(playerState.containsKey(p.getUniqueId())) {
         	if(!e.getCurrentItem().getType().equals(Material.CHEST)) {
