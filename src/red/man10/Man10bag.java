@@ -25,7 +25,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.md_5.bungee.api.ChatColor;
-
 public class Man10bag extends JavaPlugin {
 
 	@Override
@@ -54,11 +53,11 @@ public class Man10bag extends JavaPlugin {
 		        	  p.sendMessage(prefix+"§4再発行コードが間違っています！");
 		        	  return true;
 		          }
-		            if(Vault.economy.getBalance(p)<100000) {
+		            if(Vault.economy.getBalance(p)<baldata.get("reissue")) {
 		            	p.sendMessage(prefix+"§4お金が足りません!");
 		            	return true;
 		            }
-		            Vault.economy.withdrawPlayer(p, 100000);
+		            Vault.economy.withdrawPlayer(p, baldata.get("reissue"));
 		          ItemStack hand = config1.getItemStack("invs."+bagname+".key");
 		          p.getInventory().addItem(hand);
 		          p.sendMessage(prefix+"§a再発行しました。もう無くさないでね！");
@@ -80,12 +79,12 @@ public class Man10bag extends JavaPlugin {
             	p.sendMessage(prefix+"§49の倍数でかつ、54以下にしてください。");
             	return true;
             }
-            if(Vault.economy.getBalance(p)<size*100000) {
+            if(Vault.economy.getBalance(p)<baldata.get(size+"")) {
             	p.sendMessage(prefix+"§4お金が足りません!");
             	return true;
             }
-            Vault.economy.withdrawPlayer(p, size*100000);
-            ItemStack hand = new ItemStack(Material.CHEST);
+            Vault.economy.withdrawPlayer(p, baldata.get(size+""));
+            ItemStack hand = new ItemStack(Material.GOLD_BARDING);
             ItemMeta handmeta = hand.getItemMeta();
             handmeta.setDisplayName(bagname);
             List<String> k = new ArrayList<String>();
@@ -101,7 +100,7 @@ public class Man10bag extends JavaPlugin {
             bag.put(hand, bagname);
             Inventory inv = Bukkit.createInventory((InventoryHolder)null, size, bagname);
             bags.put(bagname, inv);
-            p.sendMessage(prefix+"§e$"+size*100000+"§a支払い、"+bagname+"§aバッグを作成しました！");
+            p.sendMessage(prefix+"§e$"+baldata.get(size+"")+"§a支払い、"+bagname+"§aバッグを作成しました！");
             saveConfig();
             return true;
 		}else if(args.length == 4) {
@@ -121,12 +120,13 @@ public class Man10bag extends JavaPlugin {
 	            	p.sendMessage(prefix+"§49の倍数でかつ、54以下にしてください。");
 	            	return true;
 	            }
-	            if(Vault.economy.getBalance(p)<size*100000) {
+	            int bal = baldata.get(size+"")+baldata.get("memo");
+	            if(Vault.economy.getBalance(p)<bal) {
 	            	p.sendMessage(prefix+"§4お金が足りません!");
 	            	return true;
 	            }
-	            Vault.economy.withdrawPlayer(p, size*100000);
-	            ItemStack hand = new ItemStack(Material.CHEST);
+	            Vault.economy.withdrawPlayer(p, bal);
+	            ItemStack hand = new ItemStack(Material.GOLD_BARDING);
 	            ItemMeta handmeta = hand.getItemMeta();
 	            handmeta.setDisplayName(bagname);
 	            List<String> k = new ArrayList<String>();
@@ -143,7 +143,7 @@ public class Man10bag extends JavaPlugin {
 	            bag.put(hand, bagname);
 	            Inventory inv = Bukkit.createInventory((InventoryHolder)null, size, bagname);
 	            bags.put(bagname, inv);
-	            p.sendMessage(prefix+"§e$"+size*100000+"§a支払い、"+bagname+"§aバッグを作成しました！");
+	            p.sendMessage(prefix+"§e$"+bal+"§a支払い、"+bagname+"§aバッグを作成しました！");
 	            saveConfig();
 	            return true;
 		}else if(args.length == 0) {
@@ -177,6 +177,7 @@ public class Man10bag extends JavaPlugin {
         config1.set("invs", null);
 		for (String name : bags.keySet()){
 			Inventory inv = bags.get(name);
+			config1.set("invs."+name+".code", bagcode.get(inv));
 			int size = inv.getSize();
 			config1.set("invs."+name+".size",size);
 			for(int i = 0;i<size;i++) {
@@ -194,10 +195,14 @@ public class Man10bag extends JavaPlugin {
 		super.onDisable();
 	}
 	public static FileConfiguration config1;
+	public static FileConfiguration config2;
 	String prefix = "§6§l[§a§lM§f§la§d§ln§f§l10§e§lbag§6§l]§r";
 	private HashMap<UUID,Inventory> playerState;
 	private HashMap<ItemStack,String> bag;
 	private HashMap<String,Inventory> bags;
+	private HashMap<Inventory,String> bagcode;
+	private HashMap<String,Integer> baldata;
+	Bags data;
 	@Override
 	public void onEnable() {
 		new bag(this);
@@ -205,16 +210,31 @@ public class Man10bag extends JavaPlugin {
 		getCommand("mbag").setExecutor(this);
 		saveDefaultConfig();
 	    FileConfiguration config = getConfig();
-        config1 = config;
+        config2 = config;
+        data = new Bags(this, "data.yml");
+        data.saveDefaultConfig();
+        FileConfiguration config4 = data.getConfig();
+        config1 = config4;
+        baldata = new HashMap<>();
+        bagcode = new HashMap<>();
         bags = new HashMap<>();
         playerState = new HashMap<>();
         bag = new HashMap<>();
+        baldata.put("9", config2.getInt("9",900000));
+        baldata.put("18", config2.getInt("18",1800000));
+        baldata.put("27", config2.getInt("27",2700000));
+        baldata.put("36", config2.getInt("36",3600000));
+        baldata.put("45", config2.getInt("45",4500000));
+        baldata.put("54", config2.getInt("54",5400000));
+        baldata.put("memo", config2.getInt("memo",10000));
+        baldata.put("reissue", config2.getInt("reissue",100000));
         if(config1.contains("invs")) {
         for (String key : config1.getConfigurationSection("invs").getKeys(false)) {
         	int size = config1.getInt("invs."+key+".size");
         	ItemStack keyitem = config1.getItemStack("invs."+key+".key");
         	bag.put(keyitem, key);
         	Inventory inv = Bukkit.createInventory((InventoryHolder)null, size, key);
+        	bagcode.put(inv, config1.getString("invs."+key+".code"));
         	for(int i = 0;i<size;i++) {
         		if(config1.contains("invs."+key+"."+i)==true) {
         			ItemStack item = config1.getItemStack("invs."+key+"."+i);
@@ -248,10 +268,12 @@ public class Man10bag extends JavaPlugin {
     }
     @EventHandler
     public void onclick(InventoryClickEvent e){
-
         Player p= (Player) e.getWhoClicked();
         if(playerState.containsKey(p.getUniqueId())) {
-        	if(!e.getCurrentItem().getType().equals(Material.CHEST)) {
+        	if(e.getCurrentItem()==null) {
+        		return;
+        	}
+        	if(!e.getCurrentItem().getType().equals(Material.GOLD_BARDING)) {
         		return;
         	}
         	if(e.getCurrentItem().getItemMeta().equals(null)) {
@@ -264,7 +286,10 @@ public class Man10bag extends JavaPlugin {
                e.setCancelled(true);
                return;
         	}
-        	if(!e.getCursor().getType().equals(Material.CHEST)) {
+        	if(e.getCursor()==null) {
+        		return;
+        	}
+        	if(!e.getCursor().getType().equals(Material.GOLD_BARDING)) {
         		return;
         	}
         	if(e.getCursor().getItemMeta().equals(null)) {
@@ -294,8 +319,8 @@ public class Man10bag extends JavaPlugin {
 					        p.getWorld().playSound(p.getLocation(),"block.chest.open",1.0F, 1.0F);
 					        p.getWorld().playSound(p.getLocation(),"block.end_portal_frame.fill",1.0F, 1.0F);
 					        p.getWorld().playSound(p.getLocation(),"block.enderchest.open",1.0F, 1.0F);
-                            playerState.put(p.getUniqueId(),inv);
 							p.openInventory(inv);
+                            playerState.put(p.getUniqueId(),inv);
 							return;
 						}
 					}
