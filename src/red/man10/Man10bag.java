@@ -191,7 +191,7 @@ public class Man10bag extends JavaPlugin {
 			String name = bag.get(key);
 			config1.set("invs."+name+".key",key);
 		}
-		saveConfig();
+		data.saveConfig();
 		super.onDisable();
 	}
 	public static FileConfiguration config1;
