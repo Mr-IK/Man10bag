@@ -144,7 +144,7 @@ public class Man10bag extends JavaPlugin {
 	            Inventory inv = Bukkit.createInventory((InventoryHolder)null, size, bagname);
 	            bags.put(bagname, inv);
 	            p.sendMessage(prefix+"§e$"+bal+"§a支払い、"+bagname+"§aバッグを作成しました！");
-	            saveConfig();
+	            data.saveConfig();
 	            return true;
 		}else if(args.length == 0) {
 			p.sendMessage("=======§a§kaaa§6§l===="+prefix+"====§a§kaaa§r=======");
@@ -258,6 +258,13 @@ public class Man10bag extends JavaPlugin {
      	 String name = inv.getName();
     	 if(bags.containsKey(name)) {
     		bags.put(name, inv);
+    	 }
+    	 if(p.getInventory().getItemInMainHand()==null) {
+    		 for(ItemStack item : bag.keySet()) {
+    			 if(bag.get(item).equals(inv.getName())) {
+    				 p.getInventory().setItemInMainHand(item);
+    			 }
+    		 }
     	 }
          p.getWorld().playSound(p.getLocation(),"block.chest.close",1.0F, 1.0F);
          p.getWorld().playSound(p.getLocation(),"block.enderchest.close",1.0F, 1.0F);
